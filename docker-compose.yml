@@ -1,0 +1,13 @@
+version: '3'
+
+services:
+  email_cleanup:
+    image: email_cleanup:latest
+    build:
+      context: .
+      dockerfile: Dockerfile
+    volumes:
+      - /home/lethwombie/git/email_cleanup/app:/app
+      - /home/lethwombie/git/email_cleanup/app/helpers:/app/helpers      
+    working_dir: /app
+    entrypoint: ["python", "app.py"]
