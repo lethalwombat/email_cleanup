@@ -1,11 +1,22 @@
+# imports
 import imaplib
 import socket
-import re
-from datetime import date, datetime
+from datetime import datetime
 import email
 
 
 class EmailConnection:
+
+    # parse dates
+    @staticmethod
+    def get_age(input_str):
+        for l in [15, 16]:
+            try:
+                input_date = datetime.strptime(input_str[:l], '%a, %d %b %Y').date()
+                return (datetime.now().date() - input_date).days
+            except ValueError:
+                pass
+        return 0
 
     def __init__(self, host, user, password):
         self.host = host
@@ -53,47 +64,36 @@ class EmailConnection:
             print('Folder set to {}'.format(folder))
         else:
             print('Unable to set folder')
-
-    # convert email to dictionary
-    def email_to_dict(self, id, email_message) -> dict:
-        try:
-            return {
-                'id' : str(id), 
-                'from' : email_message['from'], 
-                'to' : email_message['to'], 
-                'subject' : email_message['subject'], 
-                'date' : email_message['date']
-                }
-        except:
-            print('Unable to convert to dictionary')
-            return {
-                'id' : str(id), 
-                'from' : '', 
-                'to' : '', 
-                'subject' : '', 
-                'date' : ''
-                }
     
-    # fetch email by id
-    def fetch_by_id(self, email_id) -> dict:
-        _, data = self.connection.fetch(str(email_id), '(RFC822)')
-        _, bytes_data = data[0]
-        return self.email_to_dict(email_id, email.message_from_bytes(bytes_data))
-
     # search all messages in folder
-    def search_all(self, skip=0, show=False):
-        _ = []
-        for i in range(int(self.messages[0])-skip, 1, -1):
-            _.append(self.fetch_by_id(str(i)))
-            print(_[-1])
-            if show == True:
-                _clean_search = self.clean_up_search(_[-1])
-                print('{} From: {}\tTo: {}\t{}'.format(str(_clean_search['date']), _clean_search['from'], _clean_search['to'], _clean_search['subject']))
-        return _
+    def search_by_from(self, from_addr=[]):
+        search_results = []
+        for message in range(int(self.messages[0]), 1, -1):
+            _, data = self.connection.fetch(str(message), '(RFC822)')
+            _, bytes_data = data[0]
+            email_data = email.message_from_bytes(bytes_data)
+            for addr in from_addr:
+                if addr in email_data.get('From'):
+                    search_results.append({
+                        'id' : str(message),
+                        'from' : addr,
+                        'age' : EmailConnection.get_age(email_data.get('Date'))
+                    })
+        return search_results
+
+    # flag messages as deleted by email id
+    def delete_by_id(self, email_ids):
+        if len(email_ids) > 0:
+            print('Deleting emails')
+            for email_id in set(email_ids):
+                self.connection.store(email_id, "+FLAGS", "\\Deleted")
+        return None
 
     # logout
     def disconnect(self):
         if self.state in ['login', 'selected']:
+            self.connection.expunge()
             self.connection.logout()
         else:
             print('Connection already closed')
+            
