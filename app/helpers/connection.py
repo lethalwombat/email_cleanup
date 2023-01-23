@@ -96,4 +96,3 @@ class EmailConnection:
             self.connection.logout()
         else:
             print('Connection already closed')
-            

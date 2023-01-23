@@ -12,8 +12,11 @@ max_email_age = int(email_access.get('DEFAULT', 'max_email_age'))
 
 # get junk emails
 with open('config/junk.txt', 'r') as j, open('config/keep_90.txt', 'r') as k:
-    junk = set([s.strip().lower() for s in j.readlines()])
-    keep_90 = set([s.strip().lower() for s in k.readlines()])
+    junk = [s.strip().lower() for s in j.readlines()]
+    keep_90 = [s.strip().lower() for s in k.readlines()]
+
+# combine requested address
+to_search = set(junk + keep_90)
 
 # set up the connection
 for acc in [k.lower() for k in email_access.keys() if k != 'DEFAULT']:
@@ -25,12 +28,13 @@ for acc in [k.lower() for k in email_access.keys() if k != 'DEFAULT']:
     # delete emails in every folder
     for folder in ['junk', 'deleted', 'inbox']:
         email_connection.select_folder(folder)
-        # search for junk and delete
-        found_junk = email_connection.search_by_from(from_addr=junk)
-        email_connection.delete_by_id([email['id'] for email in found_junk])
-        # search for old stuff and delete
-        found_keep_90 = email_connection.search_by_from(from_addr=keep_90)
-        email_connection.delete_by_id([email['id'] for email in found_keep_90 if email['age'] > max_email_age])        
-
+        # search for emails
+        found_emails = email_connection.search_by_from(from_addr=to_search)
+        # reset the age if the email is in a junk list
+        for email in found_emails:
+            if email['from'] in junk:
+                email['age'] = max_email_age + 1
+        # delete where old or junk
+        email_connection.delete_by_id([email['id'] for email in found_emails if email['age'] > max_email_age])
     # close the connection
     email_connection.disconnect()

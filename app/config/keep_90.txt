@@ -6,3 +6,17 @@ airtasker
 lastpass
 invitations@linkedin.com
 hit-reply@linkedin.com
+noreply@github.com
+receipts@bolt.eu
+noreply@plex.tv
+noreply@booking.com
+ahm@membercomms.ahm.com.au
+@members.ebay.com
+menulog@orders
+@users.gumtree.com.au
+@airbnb.com
+noreply@notifications.auspost.com.au
+noreply@jetstar.com
+noreply@uber.com
+noreply@e.ing.com.au
+no-reply@employmenthero.com
